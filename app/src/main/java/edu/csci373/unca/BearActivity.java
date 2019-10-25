@@ -81,7 +81,7 @@ public class BearActivity extends AppCompatActivity {
                         geoFence.setLat(lat);
                         geoFence.setLon(lon);
 
-                        Log.d(TAG, "Bear spotted at latitude: " + lat + " longitude: " + lon);
+                        Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
 
                         newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
                             @Override
