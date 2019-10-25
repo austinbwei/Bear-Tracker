@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "655842429894",
+    "firebase_url": "https://inspiring-being-256518.firebaseio.com",
+    "project_id": "inspiring-being-256518",
+    "storage_bucket": "inspiring-being-256518.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:655842429894:android:7d0b2e90b1f93d321c80c7",
+        "android_client_info": {
+          "package_name": "edu.csci373.unca"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "655842429894-svcuto7akn2kosv6hisl96jdk0r16e2l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDl_JY4jzh4HSol59aM8Kt9-EfS9mj-rkY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "655842429894-svcuto7akn2kosv6hisl96jdk0r16e2l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

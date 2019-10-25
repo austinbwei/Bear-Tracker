@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Bear Tracker</string>
+    <string name="image_description">Image of a bear</string>
+    <string name="bear_spotted_button">Bear Spotted</string>
+    <string name="view_map_button">View Map</string>
+    <string name="success_toast">Location Added!</string>
+    <string name="fail_toast">Error!</string>
+    <string name="title_activity_maps">Map</string>
+</resources>
