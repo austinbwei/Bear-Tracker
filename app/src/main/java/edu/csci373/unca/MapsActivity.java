@@ -1,5 +1,6 @@
 package edu.csci373.unca;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import android.os.Bundle;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -8,11 +9,21 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static final String TAG = "MapsActivity";
     private GoogleMap mMap;
+    private FirebaseFirestore db;
+    private CollectionReference mFences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,17 +33,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        db = FirebaseFirestore.getInstance();
+        mFences = db.collection("geofences");
+        mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    List<DocumentSnapshot> docList = task.getResult().getDocuments();
+                    for (DocumentSnapshot doc : docList) {
+                        double lat = doc.getDouble("lat");
+                        double lon = doc.getDouble("lon");
+                        LatLng location = new LatLng(lat, lon);
+                        mMap.addMarker(new MarkerOptions().position(location));
+                    }
+                }
+            }
+        });
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
