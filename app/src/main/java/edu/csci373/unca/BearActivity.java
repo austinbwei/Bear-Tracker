@@ -14,6 +14,7 @@ import android.widget.Button;
 import android.widget.Toast;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -42,6 +43,8 @@ public class BearActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "Adding bear location");
+
+                checkPermissions();
                 bearSpotted();
             }
         });
@@ -51,51 +54,67 @@ public class BearActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "Opening map");
-                Intent intent = new Intent(BearActivity.this, MapsActivity.class);
-                startActivity(intent);
+
+                checkPermissions();
+                client.getLastLocation().addOnSuccessListener(BearActivity.this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            double lat = location.getLatitude();
+                            double lon = location.getLongitude();
+                            LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+
+                            Log.d(TAG, "User at Latitude: " + lat + " Longitude: " + lon);
+
+                            Intent intent = new Intent(BearActivity.this, MapsActivity.class);
+                            intent.putExtra("userLocation", userLocation);
+                            startActivity(intent);
+                        }
+                    }
+                });
             }
         });
     }
 
     /**
-     * Add user location to firebase server
-     * Ask user for location permissions
+     * Acquire user location and add their location as a geofence to firebase
      */
     private void bearSpotted() {
-        //Request location permission
+        // Add location to firebase
+        client.getLastLocation().addOnSuccessListener(BearActivity.this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    DocumentReference newFenceRef = db.collection("geofences").document();
+
+                    double lat = location.getLatitude();
+                    double lon = location.getLongitude();
+
+                    GeoFence geoFence = new GeoFence();
+                    geoFence.setLat(lat);
+                    geoFence.setLon(lon);
+
+                    Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
+
+                    newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if (task.isSuccessful()) {
+                                Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void checkPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-           requestPermissions();
-        } else {
-            client.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    //Add location to firebase
-                    if (location != null) {
-                        DocumentReference newFenceRef = db.collection("geofences").document();
-
-                        double lat = location.getLatitude();
-                        double lon = location.getLongitude();
-
-                        GeoFence geoFence = new GeoFence();
-                        geoFence.setLat(lat);
-                        geoFence.setLon(lon);
-
-                        Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
-
-                        newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                if (task.isSuccessful()) {
-                                    Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                        });
-                    }
-                }
-            });
+            requestPermissions();
         }
     }
 
@@ -104,7 +123,9 @@ public class BearActivity extends AppCompatActivity {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
         };
+
         Log.d(TAG, "Requesting permissions");
+
         ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
     }
 
