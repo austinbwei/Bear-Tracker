@@ -17,9 +17,9 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="268dp"
-        android:layout_height="278dp"
-        android:layout_marginTop="107dp"
+        android:layout_width="246dp"
+        android:layout_height="260dp"
+        android:layout_marginTop="190dp"
         android:layout_marginBottom="90dp"
         android:background="#00000000"
         android:backgroundTint="#00000000"
@@ -28,7 +28,7 @@
         android:src="@drawable/bear"
         app:layout_constraintBottom_toTopOf="@+id/bear_spotted"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -37,8 +37,8 @@
         style="@style/Widget.AppCompat.Button.Colored"
         android:layout_width="126dp"
         android:layout_height="51dp"
-        android:layout_marginStart="68dp"
-        android:layout_marginBottom="63dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginBottom="60dp"
         android:background="#4CAF50"
         android:backgroundTint="#000000"
         android:backgroundTintMode="add"
@@ -56,7 +56,8 @@
         android:id="@+id/view_map"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="175dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="200dp"
         android:background="#4CAF50"
         android:backgroundTint="#000000"
         android:backgroundTintMode="add"
