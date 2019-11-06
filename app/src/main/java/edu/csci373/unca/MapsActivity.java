@@ -2,6 +2,8 @@ package edu.csci373.unca;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
+
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -9,6 +11,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -53,6 +56,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
 
+
+
+
         // Add geofences from firebase
         mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
@@ -63,13 +69,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         double lat = doc.getDouble("lat");
                         double lon = doc.getDouble("lon");
                         LatLng location = new LatLng(lat, lon);
-                        mMap.addMarker(new MarkerOptions().position(location));
+                        mMap.addCircle(new CircleOptions()
+                                .center(location)
+                                .radius(200)
+                                .strokeColor(Color.BLUE)
+                                .fillColor(0x220000FF)
+                                .strokeWidth(5.0f));
 
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
+
+
                     }
                 }
             }
         });
+
     }
 
 }
