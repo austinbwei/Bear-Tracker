@@ -78,7 +78,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
 
-
                     }
                 }
             }
