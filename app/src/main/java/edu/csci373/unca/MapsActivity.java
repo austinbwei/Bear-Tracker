@@ -50,7 +50,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        //Add a marker where user is
+        // Add a marker where user is
         mMap.addMarker(new MarkerOptions().position(userLocation))
                 .setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
