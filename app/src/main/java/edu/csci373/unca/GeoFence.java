@@ -4,7 +4,7 @@ public class GeoFence {
 
     private double mLat;
     private double mLon;
-    private double mStretch;
+    private double mRadius;
 
     public GeoFence() {
 
@@ -13,6 +13,7 @@ public class GeoFence {
     public GeoFence(double mLat, double mLon) {
         this.mLat = mLat;
         this.mLon = mLon;
+        this.mRadius = 500;
     }
 
     public double getLat() {
@@ -31,11 +32,11 @@ public class GeoFence {
         mLon = lon;
     }
 
-    public double getStretch() {
-        return mStretch;
+    public double getRadius() {
+        return mRadius;
     }
 
-    public void setStretch(double stretch) {
-        mStretch = stretch;
+    public void setRadius(double radius) {
+        mRadius = radius;
     }
 }

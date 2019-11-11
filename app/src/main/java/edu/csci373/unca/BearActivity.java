@@ -4,6 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import android.Manifest;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -24,6 +27,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 public class BearActivity extends AppCompatActivity {
 
     private static final String TAG = "BearActivity";
+    private static final int DEFAULT_RADIUS = 400;
     private static final int PERMISSION_REQUEST = 1;
     private FusedLocationProviderClient client;
     private FirebaseFirestore db;
@@ -34,6 +38,7 @@ public class BearActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        scheduleJob();
 
         client = LocationServices.getFusedLocationProviderClient(this);
         db = FirebaseFirestore.getInstance();
@@ -93,6 +98,7 @@ public class BearActivity extends AppCompatActivity {
                     GeoFence geoFence = new GeoFence();
                     geoFence.setLat(lat);
                     geoFence.setLon(lon);
+                    geoFence.setRadius(DEFAULT_RADIUS);
 
                     Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
 
@@ -109,6 +115,29 @@ public class BearActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    public void scheduleJob() {
+        ComponentName componentName = new ComponentName(this, FirebaseJobService.class);
+        JobInfo.Builder builder = new JobInfo.Builder(1, componentName);
+        builder.setPersisted(true);
+        builder.setPeriodic(15 * 60 * 1000);    // Every 15min
+
+        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        int result = scheduler.schedule(builder.build());
+
+        scheduleJob();
+        if (result == JobScheduler.RESULT_SUCCESS) {
+            Log.d(TAG, "Job scheduled");
+        } else {
+            Log.d(TAG, "Job schedule failed");
+        }
+    }
+
+    public void cancelJob() {
+        JobScheduler scheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        scheduler.cancel(1);
+        Log.d(TAG, "Job cancelled");
     }
 
     private void checkPermissions() {
