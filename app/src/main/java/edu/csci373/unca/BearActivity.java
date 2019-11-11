@@ -4,10 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -20,13 +23,16 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.Random;
 
 public class BearActivity extends AppCompatActivity {
 
     private static final String TAG = "BearActivity";
+    private static final int DEFAULT_RADIUS = 200;
     private static final int PERMISSION_REQUEST = 1;
     private FusedLocationProviderClient client;
     private FirebaseFirestore db;
+    private AlarmManager mAlarmManager;
     private Button mAddFence;
     private Button mShowMap;
 
@@ -85,7 +91,7 @@ public class BearActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Location location) {
                 if (location != null) {
-                    DocumentReference newFenceRef = db.collection("geofences").document();
+                    final DocumentReference newFenceRef = db.collection("geofences").document();
 
                     double lat = location.getLatitude();
                     double lon = location.getLongitude();
@@ -93,6 +99,7 @@ public class BearActivity extends AppCompatActivity {
                     GeoFence geoFence = new GeoFence();
                     geoFence.setLat(lat);
                     geoFence.setLon(lon);
+                    geoFence.setRadius(DEFAULT_RADIUS);
 
                     Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
 
@@ -101,6 +108,25 @@ public class BearActivity extends AppCompatActivity {
                         public void onComplete(@NonNull Task<Void> task) {
                             if (task.isSuccessful()) {
                                 Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
+
+                                // Schedule recurring alarm to increase geofence radius and eventually delete
+                                mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                                Intent intent = new Intent(BearActivity.this, FirebaseAlarm.class);
+
+                                final int MIN = 0;
+                                final int MAX = 1000;
+                                int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
+
+                                intent.putExtra("documentID", newFenceRef.getId());
+                                intent.putExtra("alarmID", alarmID);
+
+                                PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
+                                mAlarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                                        SystemClock.elapsedRealtime(),
+                                        15 * 60 * 1000,     // Every 15min
+                                        pendingIntent);
+
+                                Log.d(TAG, "Passed alarm for Document: " + newFenceRef.getId());
                             } else {
                                 Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
                             }

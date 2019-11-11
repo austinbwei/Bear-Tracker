@@ -2,7 +2,6 @@ package edu.csci373.unca;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
-
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,13 +50,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        //Add a marker where user is
+        // Add a marker where user is
         mMap.addMarker(new MarkerOptions().position(userLocation))
                 .setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 15));
-
-
-
 
         // Add geofences from firebase
         mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
@@ -68,16 +64,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     for (DocumentSnapshot doc : docList) {
                         double lat = doc.getDouble("lat");
                         double lon = doc.getDouble("lon");
+                        double radius = doc.getDouble("radius");
                         LatLng location = new LatLng(lat, lon);
                         mMap.addCircle(new CircleOptions()
                                 .center(location)
-                                .radius(500)
+                                .radius(radius)
                                 .strokeColor(Color.BLUE)
                                 .fillColor(0x220000FF)
                                 .strokeWidth(5.0f));
 
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
-
 
                     }
                 }
