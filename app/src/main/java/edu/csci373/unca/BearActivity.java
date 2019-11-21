@@ -23,6 +23,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.io.Serializable;
 import java.util.Random;
 
 public class BearActivity extends AppCompatActivity {
@@ -32,7 +34,8 @@ public class BearActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST = 1;
     private FusedLocationProviderClient client;
     private FirebaseFirestore db;
-    private AlarmManager mAlarmManager;
+    private AlarmManager mAlarmManager1;
+    private AlarmManager mAlarmManager2;
     private Button mAddFence;
     private Button mShowMap;
 
@@ -110,7 +113,7 @@ public class BearActivity extends AppCompatActivity {
                                 Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
 
                                 // Schedule recurring alarm to increase geofence radius and eventually delete
-                                mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                                mAlarmManager1 = (AlarmManager) getSystemService(ALARM_SERVICE);
                                 Intent intent = new Intent(BearActivity.this, FirebaseAlarm.class);
 
                                 final int MIN = 0;
@@ -121,7 +124,7 @@ public class BearActivity extends AppCompatActivity {
                                 intent.putExtra("alarmID", alarmID);
 
                                 PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
-                                mAlarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                                mAlarmManager1.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
                                         SystemClock.elapsedRealtime(),
                                         15 * 60 * 1000,     // Every 15min
                                         pendingIntent);
@@ -153,6 +156,27 @@ public class BearActivity extends AppCompatActivity {
         Log.d(TAG, "Requesting permissions");
 
         ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
+        startNotificationAlarm();
+    }
+
+    private void startNotificationAlarm() {
+        mAlarmManager2 = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(BearActivity.this, NotificationAlarm.class);
+
+        final int MIN = 0;
+        final int MAX = 1000;
+        int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
+
+        intent.putExtra("alarmID", alarmID);
+        intent.putExtra("client", (Serializable) client);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
+        mAlarmManager2.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime(),
+                1 * 60 * 1000,     // Every 1min
+                pendingIntent);
+
+        Log.d(TAG, "Started notification alarm");
     }
 
 }
