@@ -21,12 +21,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
-import java.util.List;
+
+import java.io.Serializable;
 import java.util.Random;
 
 public class BearActivity extends AppCompatActivity {
@@ -36,8 +34,8 @@ public class BearActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST = 1;
     private FusedLocationProviderClient client;
     private FirebaseFirestore db;
-    private CollectionReference mFences;
-    private AlarmManager mAlarmManager;
+    private AlarmManager mAlarmManager1;
+    private AlarmManager mAlarmManager2;
     private Button mAddFence;
     private Button mShowMap;
 
@@ -48,7 +46,6 @@ public class BearActivity extends AppCompatActivity {
 
         client = LocationServices.getFusedLocationProviderClient(this);
         db = FirebaseFirestore.getInstance();
-        mFences = db.collection("geofences");
 
         mAddFence = (Button) findViewById(R.id.bear_spotted);
         mAddFence.setOnClickListener(new View.OnClickListener() {
@@ -102,73 +99,39 @@ public class BearActivity extends AppCompatActivity {
                     double lat = location.getLatitude();
                     double lon = location.getLongitude();
 
-                    final GeoFence geoFence = new GeoFence();
+                    GeoFence geoFence = new GeoFence();
                     geoFence.setLat(lat);
                     geoFence.setLon(lon);
                     geoFence.setRadius(DEFAULT_RADIUS);
 
                     Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
 
-                    // Check if geofence is within another geofence
-                    mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
-                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        public void onComplete(@NonNull Task<Void> task) {
                             if (task.isSuccessful()) {
-                                List<DocumentSnapshot> docList = task.getResult().getDocuments();
-                                for (DocumentSnapshot doc : docList) {
-                                    double lat = doc.getDouble("lat");
-                                    double lon = doc.getDouble("lon");
-                                    double radius = doc.getDouble("radius");
+                                Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
 
-                                    Location oldLocation = new Location("");
-                                    oldLocation.setLatitude(lat);
-                                    oldLocation.setLongitude(lon);
+                                // Schedule recurring alarm to increase geofence radius and eventually delete
+                                mAlarmManager1 = (AlarmManager) getSystemService(ALARM_SERVICE);
+                                Intent intent = new Intent(BearActivity.this, FirebaseAlarm.class);
 
-                                    Location newLocation = new Location("");
-                                    newLocation.setLatitude(geoFence.getLat());
-                                    newLocation.setLongitude(geoFence.getLon());
+                                final int MIN = 0;
+                                final int MAX = 1000;
+                                int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
 
-                                    float distance = newLocation.distanceTo(oldLocation);
+                                intent.putExtra("documentID", newFenceRef.getId());
+                                intent.putExtra("alarmID", alarmID);
 
-                                    // Is within already existing geofence
-                                    // Delete original geofence and add new geofence
-                                    if (distance <= radius) {
-                                        Log.d(TAG, "Deleting document " + doc.getId());
-                                        mFences.document(doc.getId()).delete();
-                                    }
-                                    Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
-                                }
+                                PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
+                                mAlarmManager1.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                                        SystemClock.elapsedRealtime(),
+                                        15 * 60 * 1000,     // Every 15min
+                                        pendingIntent);
 
-                                // Add new geofence
-                                newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        if (task.isSuccessful()) {
-                                            Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
-
-                                            // Schedule recurring alarm to increase geofence radius and eventually delete
-                                            mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
-                                            Intent intent = new Intent(BearActivity.this, FirebaseAlarm.class);
-
-                                            final int MIN = 0;
-                                            final int MAX = 1000;
-                                            int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
-
-                                            intent.putExtra("documentID", newFenceRef.getId());
-                                            intent.putExtra("alarmID", alarmID);
-
-                                            PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
-                                            mAlarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                                                    SystemClock.elapsedRealtime(),
-                                                    15 * 60 * 1000,     // Every 15min
-                                                    pendingIntent);
-
-                                            Log.d(TAG, "Passed alarm for Document: " + newFenceRef.getId());
-                                        } else {
-                                            Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
-                                        }
-                                    }
-                                });
+                                Log.d(TAG, "Passed alarm for Document: " + newFenceRef.getId());
+                            } else {
+                                Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
                             }
                         }
                     });
@@ -193,6 +156,27 @@ public class BearActivity extends AppCompatActivity {
         Log.d(TAG, "Requesting permissions");
 
         ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
+        startNotificationAlarm();
+    }
+
+    private void startNotificationAlarm() {
+        mAlarmManager2 = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(BearActivity.this, NotificationAlarm.class);
+
+        final int MIN = 0;
+        final int MAX = 1000;
+        int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
+
+        intent.putExtra("alarmID", alarmID);
+        intent.putExtra("client", (Serializable) client);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
+        mAlarmManager2.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime(),
+                1 * 60 * 1000,     // Every 1min
+                pendingIntent);
+
+        Log.d(TAG, "Started notification alarm");
     }
 
 }
