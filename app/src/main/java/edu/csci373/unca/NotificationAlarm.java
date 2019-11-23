@@ -59,7 +59,7 @@ public class NotificationAlarm extends BroadcastReceiver {
     }
 
     private LatLng getUserLocation() {
-        LatLng userLocation = null;
+        final LatLng[] userLocation = {null};
 
         client.getLastLocation().addOnSuccessListener((Executor) this, new OnSuccessListener<Location>() {
             @Override
@@ -67,13 +67,13 @@ public class NotificationAlarm extends BroadcastReceiver {
                 if (location != null) {
                     double lat = location.getLatitude();
                     double lon = location.getLongitude();
-                    userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    userLocation[0] = new LatLng(location.getLatitude(), location.getLongitude());
 
                     Log.d(TAG, "User at Latitude: " + lat + " Longitude: " + lon);
                 }
             }
         });
-        return userLocation;
+        return userLocation[0];
     }
 
 }
