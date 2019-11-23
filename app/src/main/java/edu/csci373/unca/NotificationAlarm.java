@@ -1,5 +1,6 @@
 package edu.csci373.unca;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +8,7 @@ import android.location.Location;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -25,14 +27,17 @@ public class NotificationAlarm extends BroadcastReceiver {
     private CollectionReference mFences;
     private LatLng userLocation;
     private int alarmID;
+    private BearActivity bearActivity;
     private FusedLocationProviderClient client;
 
     @Override
     public void onReceive(final Context context, Intent intent) {
         Log.d(TAG, "Received alarm broadcast");
 
+        bearActivity = new BearActivity();
+
         alarmID = intent.getExtras().getInt("alarmID");
-        client = (FusedLocationProviderClient) intent.getExtras().getSerializable("client");
+        client = (FusedLocationProviderClient) LocationServices.getFusedLocationProviderClient(bearActivity);
 
         db = FirebaseFirestore.getInstance();
         mFences = db.collection("geofences");
@@ -59,8 +64,6 @@ public class NotificationAlarm extends BroadcastReceiver {
     }
 
     private LatLng getUserLocation() {
-        LatLng userLocation = null;
-
         client.getLastLocation().addOnSuccessListener((Executor) this, new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
