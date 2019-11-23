@@ -169,12 +169,11 @@ public class BearActivity extends AppCompatActivity {
         int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
 
         intent.putExtra("alarmID", alarmID);
-        intent.putExtra("client", (Serializable) client);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
         mAlarmManager2.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 SystemClock.elapsedRealtime(),
-                1 * 60 * 1000,     // Every 1min
+                2 * 60 * 1000,     // Every 2min
                 pendingIntent);
 
         Log.d(TAG, "Started notification alarm");
