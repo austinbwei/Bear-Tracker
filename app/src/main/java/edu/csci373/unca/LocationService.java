@@ -115,9 +115,9 @@ public class LocationService extends Service {
                         float distance = newLocation.distanceTo(geoLocation);
 
                         // Is within already existing geofence
-                        
+
                         if (distance <= radius) {
-                            Log.d(TAG, "Deleting document " + doc.getId());
+                            Log.d(TAG, "User is in a geoFence " + doc.getId());
                         }
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
                     }
