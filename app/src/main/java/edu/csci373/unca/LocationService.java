@@ -1,7 +1,12 @@
 package edu.csci373.unca;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -14,6 +19,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
 
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -117,6 +123,7 @@ public class LocationService extends Service {
                         // Is within already existing geofence
 
                         if (distance <= radius) {
+                            LocationService.sendNotification();
                             Log.d(TAG, "User is in a geoFence " + doc.getId());
                         }
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
@@ -129,9 +136,37 @@ public class LocationService extends Service {
 
     }
 
+
+
     private void sendNotification() {
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String CHANNEL_ID = "BearTrackr";
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_description);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.enableLights(true);
+            channel.setLightColor(Color.RED);
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
 
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+
+        Notification notification = new Notification.Builder(LocationService.this)
+                .setContentTitle("Bear Trackr")
+                .setContentText("There's a bear in your area!!!!")
+                .setSmallIcon(R.drawable.bear)
+                .build();
+
+        notificationManager.notify(1, notification);
 
 
 
