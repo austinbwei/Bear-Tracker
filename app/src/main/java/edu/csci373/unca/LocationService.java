@@ -123,7 +123,7 @@ public class LocationService extends Service {
                         // Is within already existing geofence
 
                         if (distance <= radius) {
-                            LocationService.sendNotification();
+                            sendNotification();
                             Log.d(TAG, "User is in a geoFence " + doc.getId());
                         }
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
