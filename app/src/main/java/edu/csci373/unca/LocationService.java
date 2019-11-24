@@ -92,7 +92,7 @@ public class LocationService extends Service {
      * Send notification if they are in a geofence
      * @param location of user
      */
-    private void searchFireBase(Location location) {
+    private void searchFireBase(final Location location) {
         mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
@@ -112,7 +112,7 @@ public class LocationService extends Service {
                         newLocation.setLongitude(lon);
 
 
-                        float distance = newLocation.distanceTo(geoLocation);
+                        float distance = newLocation.distanceTo(location);
 
                         // Is within already existing geofence
 
