@@ -43,6 +43,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".LocationService"
+            android:enabled="true" />
         <receiver android:name=".FirebaseAlarm"
             android:exported="true" />
     </application>

@@ -21,10 +21,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.io.Serializable;
+import com.google.firebase.firestore.QuerySnapshot;
+import java.util.List;
 import java.util.Random;
 
 public class BearActivity extends AppCompatActivity {
@@ -34,8 +36,8 @@ public class BearActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST = 1;
     private FusedLocationProviderClient client;
     private FirebaseFirestore db;
-    private AlarmManager mAlarmManager1;
-    private AlarmManager mAlarmManager2;
+    private CollectionReference mFences;
+    private AlarmManager mAlarmManager;
     private Button mAddFence;
     private Button mShowMap;
 
@@ -46,6 +48,7 @@ public class BearActivity extends AppCompatActivity {
 
         client = LocationServices.getFusedLocationProviderClient(this);
         db = FirebaseFirestore.getInstance();
+        mFences = db.collection("geofences");
 
         mAddFence = (Button) findViewById(R.id.bear_spotted);
         mAddFence.setOnClickListener(new View.OnClickListener() {
@@ -53,8 +56,11 @@ public class BearActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Log.d(TAG, "Adding bear location");
 
-                checkPermissions();
-                bearSpotted();
+                if (checkPermissions()) {
+                    bearSpotted();
+                } else {
+                    requestPermissions();
+                }
             }
         });
 
@@ -64,23 +70,26 @@ public class BearActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Log.d(TAG, "Opening map");
 
-                checkPermissions();
-                client.getLastLocation().addOnSuccessListener(BearActivity.this, new OnSuccessListener<Location>() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        if (location != null) {
-                            double lat = location.getLatitude();
-                            double lon = location.getLongitude();
-                            LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                if (checkPermissions()) {
+                    client.getLastLocation().addOnSuccessListener(BearActivity.this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                double lat = location.getLatitude();
+                                double lon = location.getLongitude();
+                                LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
-                            Log.d(TAG, "User at Latitude: " + lat + " Longitude: " + lon);
+                                Log.d(TAG, "User at Latitude: " + lat + " Longitude: " + lon);
 
-                            Intent intent = new Intent(BearActivity.this, MapsActivity.class);
-                            intent.putExtra("userLocation", userLocation);
-                            startActivity(intent);
+                                Intent intent = new Intent(BearActivity.this, MapsActivity.class);
+                                intent.putExtra("userLocation", userLocation);
+                                startActivity(intent);
+                            }
                         }
-                    }
-                });
+                    });
+                } else {
+                    requestPermissions();
+                }
             }
         });
     }
@@ -99,39 +108,72 @@ public class BearActivity extends AppCompatActivity {
                     double lat = location.getLatitude();
                     double lon = location.getLongitude();
 
-                    GeoFence geoFence = new GeoFence();
+                    final GeoFence geoFence = new GeoFence();
                     geoFence.setLat(lat);
                     geoFence.setLon(lon);
                     geoFence.setRadius(DEFAULT_RADIUS);
 
                     Log.d(TAG, "Bear spotted at Latitude: " + lat + " Longitude: " + lon);
 
-                    newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                         @Override
-                        public void onComplete(@NonNull Task<Void> task) {
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
                             if (task.isSuccessful()) {
-                                Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
+                                List<DocumentSnapshot> docList = task.getResult().getDocuments();
+                                for (DocumentSnapshot doc : docList) {
+                                    double lat = doc.getDouble("lat");
+                                    double lon = doc.getDouble("lon");
+                                    double radius = doc.getDouble("radius");
 
-                                // Schedule recurring alarm to increase geofence radius and eventually delete
-                                mAlarmManager1 = (AlarmManager) getSystemService(ALARM_SERVICE);
-                                Intent intent = new Intent(BearActivity.this, FirebaseAlarm.class);
+                                    Location oldLocation = new Location("");
+                                    oldLocation.setLatitude(lat);
+                                    oldLocation.setLongitude(lon);
 
-                                final int MIN = 0;
-                                final int MAX = 1000;
-                                int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
+                                    Location newLocation = new Location("");
+                                    newLocation.setLatitude(geoFence.getLat());
+                                    newLocation.setLongitude(geoFence.getLon());
 
-                                intent.putExtra("documentID", newFenceRef.getId());
-                                intent.putExtra("alarmID", alarmID);
+                                    float distance = newLocation.distanceTo(oldLocation);
 
-                                PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
-                                mAlarmManager1.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                                        SystemClock.elapsedRealtime(),
-                                        15 * 60 * 1000,     // Every 15min
-                                        pendingIntent);
+                                    // Is within already existing geofence
+                                    // Delete original geofence and add new geofence
+                                    if (distance <= radius) {
+                                        Log.d(TAG, "Deleting document " + doc.getId());
+                                        mFences.document(doc.getId()).delete();
+                                    }
+                                    Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
+                                }
 
-                                Log.d(TAG, "Passed alarm for Document: " + newFenceRef.getId());
-                            } else {
-                                Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
+                                // Add new geofence
+                                newFenceRef.set(geoFence).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful()) {
+                                            Toast.makeText(BearActivity.this, R.string.success_toast, Toast.LENGTH_SHORT).show();
+
+                                            // Schedule recurring alarm to increase geofence radius and eventually delete
+                                            mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+                                            Intent intent = new Intent(BearActivity.this, FirebaseAlarm.class);
+
+                                            final int MIN = 0;
+                                            final int MAX = 1000;
+                                            int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
+
+                                            intent.putExtra("documentID", newFenceRef.getId());
+                                            intent.putExtra("alarmID", alarmID);
+
+                                            PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
+                                            mAlarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                                                    SystemClock.elapsedRealtime(),
+                                                    15 * 60 * 1000,     // Every 15min
+                                                    pendingIntent);
+
+                                            Log.d(TAG, "Passed alarm for Document: " + newFenceRef.getId());
+                                        } else {
+                                            Toast.makeText(BearActivity.this, R.string.fail_toast, Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
                             }
                         }
                     });
@@ -140,10 +182,12 @@ public class BearActivity extends AppCompatActivity {
         });
     }
 
-    private void checkPermissions() {
+    private boolean checkPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions();
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -156,26 +200,18 @@ public class BearActivity extends AppCompatActivity {
         Log.d(TAG, "Requesting permissions");
 
         ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
-        startNotificationAlarm();
+
+        if (checkPermissions()) {
+            startLocationService();
+        } else {
+            requestPermissions();
+        }
     }
 
-    private void startNotificationAlarm() {
-        mAlarmManager2 = (AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(BearActivity.this, NotificationAlarm.class);
-
-        final int MIN = 0;
-        final int MAX = 1000;
-        int alarmID = new Random().nextInt((MAX - MIN) + 1) + MIN;      // Generate random ID number
-
-        intent.putExtra("alarmID", alarmID);
-
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(BearActivity.this, alarmID, intent, 0);
-        mAlarmManager2.setRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime(),
-                2 * 60 * 1000,     // Every 2min
-                pendingIntent);
-
-        Log.d(TAG, "Started notification alarm");
+    private void startLocationService() {
+        Intent serviceIntent = new Intent(this, LocationService.class);
+        startService(serviceIntent);
+        Log.d(TAG, "Started location service");
     }
 
 }
