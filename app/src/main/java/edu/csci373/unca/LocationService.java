@@ -137,16 +137,18 @@ public class LocationService extends Service {
     }
 
 
-
-    private void sendNotification() {
+    private void createNotificationChannel() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             String CHANNEL_ID = "BearTrackr";
             CharSequence name = getString(R.string.channel_name);
             String description = getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.enableLights(true);
+            channel.canBypassDnd();
+            channel.getLockscreenVisibility();
+
             channel.setLightColor(Color.RED);
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
@@ -154,15 +156,17 @@ public class LocationService extends Service {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+    private void sendNotification() {
 
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
 
-
         Notification notification = new Notification.Builder(LocationService.this)
-                .setContentTitle("Bear Trackr")
-                .setContentText("There's a bear in your area!!!!")
+                .setAutoCancel(true)
+                .setContentTitle("Bear Tracker")
+                .setContentText("There's a bear in your area!!!")
                 .setSmallIcon(R.drawable.bear)
                 .build();
 
