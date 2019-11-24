@@ -20,6 +20,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -95,6 +96,7 @@ public class LocationService extends Service {
         mFences.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
+
                 if (task.isSuccessful()) {
                     List<DocumentSnapshot> docList = task.getResult().getDocuments();
                     for (DocumentSnapshot doc : docList) {
@@ -105,18 +107,23 @@ public class LocationService extends Service {
                         geoLocation.setLatitude(lat);
                         geoLocation.setLongitude(lon);
 
+                        Location newLocation = new Location("");
+                        newLocation.setLatitude(lat);
+                        newLocation.setLongitude(lon);
+
+
+                        float distance = newLocation.distanceTo(geoLocation);
+
+                        // Is within already existing geofence
+                        
+                        if (distance <= radius) {
+                            Log.d(TAG, "Deleting document " + doc.getId());
+                        }
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
-
-
-
-
-
-
-
-
+                    }
                     }
                 }
-            }
+
         });
 
 
