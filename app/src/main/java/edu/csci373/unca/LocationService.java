@@ -128,21 +128,15 @@ public class LocationService extends Service {
                         }
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
                     }
-                    }
+                }
                 }
 
         });
-
-
     }
 
-
-
     private void sendNotification() {
-
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
 
         Notification notification = new Notification.Builder(LocationService.this)
                 .setColor(6500000)
@@ -155,14 +149,6 @@ public class LocationService extends Service {
                 .build();
 
         notificationManager.notify(1, notification);
-
-
-
-
-
-
-
-
     }
 
 }
