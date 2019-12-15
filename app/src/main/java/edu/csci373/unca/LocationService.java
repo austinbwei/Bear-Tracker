@@ -139,6 +139,9 @@ public class LocationService extends Service {
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         Notification notification = new Notification.Builder(LocationService.this)
+                .setColor(6500000)
+                .setOnlyAlertOnce(true)
+
                 .setAutoCancel(true)
                 .setContentTitle("Bear Tracker")
                 .setContentText("There's a bear in your area!!!")
