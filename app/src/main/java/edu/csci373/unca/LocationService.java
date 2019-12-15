@@ -128,40 +128,15 @@ public class LocationService extends Service {
                         }
                         Log.d(TAG, "Geofence at Latitude: " + lat + " Longitude: " + lon);
                     }
-                    }
+                }
                 }
 
         });
-
-
     }
 
-
-    private void createNotificationChannel() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            String CHANNEL_ID = "BearTrackr";
-            CharSequence name = getString(R.string.channel_name);
-            String description = getString(R.string.channel_description);
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
-            channel.enableLights(true);
-            channel.canBypassDnd();
-            channel.getLockscreenVisibility();
-
-            channel.setLightColor(Color.RED);
-            channel.enableVibration(true);
-            channel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
     private void sendNotification() {
-
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
 
         Notification notification = new Notification.Builder(LocationService.this)
                 .setAutoCancel(true)
@@ -171,14 +146,6 @@ public class LocationService extends Service {
                 .build();
 
         notificationManager.notify(1, notification);
-
-
-
-
-
-
-
-
     }
 
 }
